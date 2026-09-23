@@ -1,0 +1,32 @@
+Jaggy Analyser — Vercel deploy guide
+====================================
+
+1. Push this folder to GitHub OR drag-upload on vercel.com
+
+2. Vercel project settings (usually auto-detected):
+   Framework Preset:  Vite
+   Build Command:     npm run build
+   Output Directory:  dist
+   Install Command:   npm install
+
+3. Environment Variables (Settings → Environment Variables)
+   Add for Production + Preview:
+
+   APP_ACCESS_CODE        = JaggySecure2026!
+   APP_SESSION_SECRET     = jaggy-secret-2026-xyz
+   TELEGRAM_BOT_TOKEN     = (your bot token from BotFather)
+   TELEGRAM_CHAT_ID       = 5766676719
+
+4. Deploy
+
+5. Open https://YOUR-PROJECT.vercel.app
+   Sign in with access code: JaggySecure2026!
+   Tap Telegram to test alerts.
+
+API routes (auto from /api folder):
+  /api/auth-login
+  /api/auth-verify
+  /api/forex-analysis
+  /api/telegram-notify
+
+Created by JAGGY

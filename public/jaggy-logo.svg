@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Jaggy">
+  <defs>
+    <linearGradient id="g" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7BA3C4"/>
+      <stop offset="1" stop-color="#4A6B8A"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="20" y1="48" x2="52" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C4A574"/>
+      <stop offset="1" stop-color="#8A7350"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#12161E"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" stroke="#2A3340" stroke-width="1.5"/>
+  <!-- abstract chart bars -->
+  <path d="M14 44V36" stroke="url(#g)" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M22 44V28" stroke="url(#g)" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M30 44V32" stroke="url(#g)" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M38 44V22" stroke="url(#g)" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M46 44V18" stroke="url(#g2)" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- ascending trend line -->
+  <path d="M13 40 L22 30 L30 34 L38 20 L50 14" stroke="url(#g2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="14" r="3" fill="#C4A574"/>
+</svg>
