@@ -58,17 +58,22 @@ const Index = () => {
   const [journalSignals, setJournalSignals] = useState<Signal[]>([]);
   // Stable keys so the same setup is not re-alerted every refresh
   // (timestamp alone changes each scan and caused duplicate Telegram messages)
-  const seenSignals = useRef<Set<string>>(() => {
-    try {
-      const fromLocal = JSON.parse(localStorage.getItem("jaggy_seen_trades") ?? "[]");
-      const fromSession = JSON.parse(sessionStorage.getItem("seenSignals") ?? "[]");
-      return new Set([...(Array.isArray(fromLocal) ? fromLocal : []), ...(Array.isArray(fromSession) ? fromSession : [])]);
-    } catch {
-      return new Set();
-    }
-  }());
+  
   const isFirstLoad = useRef(true);
-
+const seenSignals = useRef<Set<string>>(
+    (() => {
+      try {
+        const fromLocal = JSON.parse(localStorage.getItem("jaggy_seen_trades") ?? "[]");
+        const fromSession = JSON.parse(sessionStorage.getItem("seenSignals") ?? "[]");
+        return new Set([
+          ...(Array.isArray(fromLocal) ? fromLocal : []),
+          ...(Array.isArray(fromSession) ? fromSession : []),
+        ]);
+      } catch {
+        return new Set();
+      }
+    })(),
+  );
   const tradeKey = (s: Signal) =>
     `${s.pair}|${s.direction}|${Number(s.entry).toPrecision(7)}`;
 
