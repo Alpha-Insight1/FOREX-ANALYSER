@@ -2054,15 +2054,15 @@ export default async (req: Request) => {
     developing: DevelopingSetup | null;
     resolved: number;
   }>[] = [];
-  const BATCH = 1;
-  const DELAY_MS = 700;
+  const BATCH = 4;
+  const DELAY_MS = 120;
   for (let i = 0; i < PAIRS.length; i += BATCH) {
     const chunk = PAIRS.slice(i, i + BATCH);
     const chunkResults = await Promise.allSettled(
       chunk.map(async ({ pair }) => {
         const [hourly, daily] = await Promise.all([
           fetchYahooCandles(pair, "1h", "3mo"),
-          fetchYahooCandles(pair, "1d", "1y"),
+          fetchYahooCandles(pair, "1d", "6mo"),
         ]);
         const fourH = resampleTo4H(hourly);
 
