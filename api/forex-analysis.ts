@@ -1846,7 +1846,8 @@ async function analyzePairFromCandles(
 
   // GATE 11: PROP-FIRM floor — only high-conviction setups (≥85%)
   // Passing challenges requires selective entries, not signal volume.
-  if (confidence < 85) return { signal: null, developing: tagBlocked(buildDeveloping(), "GATE 11 PROP") };
+const minConf = (isIndex(pair) || isGold(pair)) ? 85 : 80;
+  if (confidence < minConf) return { signal: null, developing: tagBlocked(buildDeveloping(), "GATE 11 PROP") }; 
 
   const decimals = priceDecimals(pair);
 
@@ -1948,16 +1949,35 @@ async function analyzePairFromCandles(
   }
 
   // GATE 11b: institutional footprint — liquidity sweep or FVG required
+  // GATE 11b: footprint — required for Gold/Indices; optional for FX on BOS+discount retest
   if (!sweep && !fvg) {
-    return { signal: null, developing: tagBlocked(buildDeveloping(), "GATE 11b FOOTPRINT") };
+    if (isIndex(pair) || isGold(pair)) {
+      return { signal: null, developing: tagBlocked(buildDeveloping(), "GATE 11b FOOTPRINT") };
+    }
+    if (!(structure.structure && inDiscount)) {
+      return { signal: null, developing: tagBlocked(buildDeveloping(), "GATE 11b FOOTPRINT") };
+    }
+    confluences.push("FX BOS + discount/premium retest (sweep/FVG optional)");
   }
 
   const autoFire = confidence >= 95;
+  const fxZonePad = atrVal * 0.45;
+  const fxInEntryZone =
+    direction === "BUY"
+      ? currentPrice >= entryZone.bottom - fxZonePad && currentPrice <= entryZone.top + fxZonePad
+      : currentPrice <= entryZone.top + fxZonePad && currentPrice >= entryZone.bottom - fxZonePad;
+  const fxRetestReady =
+    !isIndex(pair) &&
+    !isGold(pair) &&
+    !!structure.structure &&
+    inDiscount &&
+    fxInEntryZone;
+
   const proTriggerReady = isGold(pair)
-    ? (goldEntryReady || autoFire)
+    ? (goldEntryReady || ltfConfirmed || confirmedByCandle || autoFire)
     : isIndex(pair)
       ? (indexEntryReady || autoFire)
-      : (ltfConfirmed || confirmedByCandle || autoFire);
+      : (ltfConfirmed || confirmedByCandle || fxRetestReady || autoFire);
   if (!proTriggerReady) {
     return {
       signal: null,
@@ -1967,9 +1987,12 @@ async function analyzePairFromCandles(
           ? "AWAITING_1M_5M_ENTRY"
           : isIndex(pair)
             ? "AWAITING_5_15_30M_ENTRY"
-            : "AWAITING_1H_CONFIRMATION",
+            : "AWAITING_FX_RETEST_OR_1H",
       ),
     };
+  }
+  if (fxRetestReady && !ltfConfirmed && !confirmedByCandle) {
+    confluences.push("FX LTF: price retesting discount/premium OB after BOS/CHoCH");
   }
 
   if (isIndex(pair) && indexEntryTf) {
