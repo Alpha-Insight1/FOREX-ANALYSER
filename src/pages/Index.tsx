@@ -41,7 +41,7 @@ interface AnalysisResponse {
 
 const REFRESH_MS = 30 * 1000; // 30s — faster live alerts so entries are less stale
 /** Prop-firm mode: only surface high-conviction setups (matches server GATE 11). */
-const PROP_MIN_CONF = 85;
+const PROP_MIN_CONF = 80;
 
 type Tab = "overview" | "signals" | "developing" | "book";
 
