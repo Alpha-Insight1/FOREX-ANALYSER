@@ -44,7 +44,20 @@ function write(trades: JournalTrade[]) {
 export function getJournal(): JournalTrade[] {
   return read();
 }
+/** Wipe entire local trade book (open + closed). */
+export function clearJournal(): void {
+  write([]);
+}
 
+/** Close/remove only open trades; keep closed history. */
+export function clearOpenTrades(): void {
+  write(read().filter((t) => t.status !== "open"));
+}
+
+/** Remove closed history only; keep open positions. */
+export function clearClosedTrades(): void {
+  write(read().filter((t) => t.status === "open"));
+}
 /** 1R size from original stop (preferred) or current stop */
 export function riskUnit(t: JournalTrade): number {
   const sl = t.original_stop_loss ?? t.stop_loss;
