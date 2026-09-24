@@ -1978,22 +1978,69 @@ async function analyzePairFromCandles(
   if (isGold(pair) && goldEntryTf) {
     confluences.push(`Gold entry confirmed on ${goldEntryTf} (trend locked on 4H + Daily)`);
   }
+  // ---- REALISTIC FILL (ALL pairs: FX, Gold, Indices) ----
+  // Planned "entry" is the OB/zone level. A live TRADE TAKEN must use the
+  // actual market price. If price is far from the zone, stay Developing only.
+  const zonePad = atrVal * 0.5;
+  const priceInOrNearZone =
+    direction === "BUY"
+      ? currentPrice >= entryZone.bottom - zonePad && currentPrice <= entryZone.top + zonePad
+      : currentPrice <= entryZone.top + zonePad && currentPrice >= entryZone.bottom - zonePad;
+  const distToPlan = Math.abs(currentPrice - entry);
+  const maxReachAtr = isIndex(pair) ? 1.5 : isGold(pair) ? 1.35 : 1.2;
+  const reachable = priceInOrNearZone || distToPlan <= atrVal * maxReachAtr;
+  if (!reachable) {
+    return {
+      signal: null,
+      developing: tagBlocked(
+        buildDeveloping(),
+        `PRICE_AWAY_FROM_ENTRY (now ${currentPrice.toFixed(decimals)} vs plan ${entry.toFixed(decimals)})`,
+      ),
+    };
+  }
+
+  const fillEntry = Number(currentPrice.toFixed(decimals));
+
+  const obDistal = direction === "BUY" ? entryZone.bottom : entryZone.top;
+  let fillStop: number;
+  if (direction === "BUY") {
+    fillStop = Math.min(stopLoss, obDistal - atrVal * 0.25);
+    if (!(fillStop < fillEntry)) fillStop = fillEntry - Math.max(atrVal * 0.8, Math.abs(entry - stopLoss));
+  } else {
+    fillStop = Math.max(stopLoss, obDistal + atrVal * 0.25);
+    if (!(fillStop > fillEntry)) fillStop = fillEntry + Math.max(atrVal * 0.8, Math.abs(entry - stopLoss));
+  }
+  const rawRisk = Math.abs(fillEntry - fillStop);
+  if (rawRisk > atrVal * 3) {
+    fillStop = direction === "BUY" ? fillEntry - atrVal * 3 : fillEntry + atrVal * 3;
+  }
+  if (rawRisk < atrVal * 0.35) {
+    fillStop = direction === "BUY" ? fillEntry - atrVal * 0.8 : fillEntry + atrVal * 0.8;
+  }
+
+  const fillRisk = Math.abs(fillEntry - fillStop) || atrVal;
+  const fillTp1 = direction === "BUY" ? fillEntry + fillRisk * 2 : fillEntry - fillRisk * 2;
+  const fillTp2 = direction === "BUY" ? fillEntry + fillRisk * 8 : fillEntry - fillRisk * 8;
+
+  confluences.push(
+    `Accurate fill @ ${fillEntry} (live) · plan zone ${entry.toFixed(decimals)}`,
+  );
   return {
     signal: {
       pair,
       direction,
-      entry: Number(entry.toFixed(decimals)),
-      stopLoss: Number(stopLoss.toFixed(decimals)),
-      takeProfit: Number(takeProfit.toFixed(decimals)),
-      takeProfit2: Number(takeProfit2.toFixed(decimals)),
-      riskReward: rr2,
+      entry: fillEntry,
+      stopLoss: Number(fillStop.toFixed(decimals)),
+      takeProfit: Number(fillTp1.toFixed(decimals)),
+      takeProfit2: Number(fillTp2.toFixed(decimals)),
+      riskReward: 8,
       confidence,
       structure: structure.structure,
       assetClass: assetClassOf(pair),
       confluences,
       confidenceBreakdown: breakdown,
       currentPrice: Number(currentPrice.toFixed(decimals)),
-      timestamp: new Date(lastCandle.time * 1000).toISOString(),
+      timestamp: new Date().toISOString(),
       htf_bias,
       ...(swingEntry != null ? { swingEntry, swingStopLoss, swingRiskPips } : {}),
       ...(splitEntry ? { splitEntry } : {}),
